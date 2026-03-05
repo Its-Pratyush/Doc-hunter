@@ -53,20 +53,363 @@ Doc-Hunter uses a **Retrieval-Augmented Generation (RAG)** architecture combinin
 └──────────────────────────────────────────────────────┘
 ```
 
+## Quick Start
+
+Get Doc-Hunter running in 5 minutes! Choose between Docker (recommended) or manual setup.
+
+### Prerequisites
+
+#### 1. Install Deno
+
+**macOS/Linux:**
+```bash
+curl -fsSL https://deno.land/install.sh | sh
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://deno.land/install.ps1 | iex
+```
+
+**Verify installation:**
+```bash
+deno --version
+```
+
+#### 2. Install Docker (Recommended) OR SurrealDB
+
+**Option A: Docker (Recommended)**
+
+- **macOS:** [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
+- **Linux:**
+  ```bash
+  # Ubuntu/Debian
+  sudo apt-get update
+  sudo apt-get install docker.io docker-compose
+
+  # Start Docker
+  sudo systemctl start docker
+  ```
+- **Windows:** [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
+
+**Verify Docker:**
+```bash
+docker --version
+docker-compose --version
+```
+
+**Option B: SurrealDB (Manual)**
+
+```bash
+# macOS
+brew install surrealdb/tap/surreal
+
+# Linux
+curl -sSf https://install.surrealdb.com | sh
+
+# Windows
+iwr https://install.surrealdb.com -useb | iex
+```
+
+#### 3. Get Google Gemini API Key
+
+1. Visit [Google AI Studio](https://aistudio.google.com/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy your API key (starts with `AIza...`)
+
+---
+
+### Setup Instructions
+
+#### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/Its-Pratyush/Doc-hunter.git
+cd doc-hunter
+```
+
+#### Step 2: Configure Environment Variables
+
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit .env and add your API key
+# Replace 'your_api_key_here' with your actual Gemini API key
+```
+
+**Example `.env` file:**
+```env
+GEMINI_API_KEY=AIzaSyABC123...your_actual_key_here
+```
+
+#### Step 3: Start SurrealDB
+
+Choose **ONE** of the following methods:
+
+**🐳 Method A: Docker (Recommended)**
+
+```bash
+# Start SurrealDB in background
+docker-compose up -d
+
+# Verify it's running
+docker-compose ps
+```
+
+**Output:**
+```
+NAME                IMAGE                         STATUS
+doc-hunter-surrealdb-1   surrealdb/surrealdb:latest   Up 5 seconds
+```
+
+**Stop SurrealDB when done:**
+```bash
+docker-compose down
+```
+
+**📦 Method B: Manual (No Docker)**
+
+```bash
+# Start SurrealDB (in-memory, for testing)
+surreal start --log trace --user root --pass root memory
+
+# OR for persistent storage
+surreal start --log trace --user root --pass root file://mydatabase.db
+```
+
+Keep this terminal running. Open a new terminal for the next steps.
+
+#### Step 4: Initialize Database Schema
+
+```bash
+deno task start init
+```
+
+**Expected Output:**
+```
+⚡ Initializing Schema...
+🗑️  Dropping existing table...
+📋 Creating table...
+📝 Defining fields...
+🔢 Defining embedding field (3072 dimensions)...
+🔍 Creating vector index...
+✅ Schema Initialized!
+```
+
+#### Step 5: Start Using Doc-Hunter!
+
+**Interactive Mode (Recommended for Beginners):**
+
+```bash
+deno task start
+```
+
+**You'll see:**
+```
+╔═══════════════════════════════════════════════════════╗
+║         🏹 Doc-Hunter Interactive Mode                ║
+║   Ingest docs and ask questions in one session!      ║
+╚═══════════════════════════════════════════════════════╝
+
+🔌 Connecting to database...
+✅ Database connected!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 MENU:
+  1. Ingest a new document
+  2. Ask a question
+  3. View ingested documents
+  4. Clear all documents
+  5. Exit
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Choose an option (1-5):
+```
+
+---
+
+### Your First Query - Complete Example
+
+Let's ingest Deno documentation and ask questions:
+
+#### 1. Start Interactive Mode
+
+```bash
+deno task start
+```
+
+#### 2. Ingest a Document
+
+- Choose option `1` (Ingest a new document)
+- Enter URL: `https://docs.deno.com/runtime/`
+- Wait for ingestion to complete (~10-30 seconds)
+
+**You'll see:**
+```
+📥 Fetching https://docs.deno.com/runtime/...
+✅ Fetched 3667 characters.
+🔪 Split into 2 chunks.
+   Saved chunk 0/2
+✅ Ingestion Complete!
+```
+
+#### 3. Ask Questions
+
+- Choose option `2` (Ask a question)
+- Enter question: `What is Deno?`
+- Watch the answer stream in real-time!
+
+**You'll see:**
+```
+🤖 Thinking...
+
+================ ANSWER ================
+
+Deno is an open-source JavaScript, TypeScript, and WebAssembly
+runtime with secure defaults and a great developer experience.
+It is built on V8, Rust, and Tokio.
+```
+
+#### 4. Ask More Questions
+
+- Type `y` to ask another question
+- Try: `How do I run TypeScript files in Deno?`
+- Try: `What are Deno's security features?`
+
+#### 5. Exit
+
+- Type `n` when done asking questions
+- Choose option `5` to exit
+
+---
+
+### Command Line Mode (For Automation)
+
+If you prefer direct commands instead of interactive mode:
+
+```bash
+# Initialize database
+deno task start init
+
+# Ingest a document
+deno task start ingest https://docs.deno.com/runtime/
+
+# Ask a question
+deno task start ask "What is Deno?"
+
+# View help
+deno task start help
+```
+
+---
+
+### Multiple Documentation Sources
+
+You can ingest multiple sources and query across all of them:
+
+```bash
+# Start interactive mode
+deno task start
+
+# Choose option 1, ingest first doc
+# Enter: https://docs.deno.com/runtime/
+
+# Choose option 1 again, ingest second doc
+# Enter: https://docs.surrealdb.com/
+
+# Choose option 2, ask questions
+# Your question: "Compare Deno and SurrealDB"
+# The system searches across BOTH documentation sources!
+```
+
+---
+
+### Troubleshooting
+
+#### Issue: "Failed to connect to database"
+
+**Solution:**
+```bash
+# Check if SurrealDB is running
+
+# For Docker:
+docker-compose ps
+
+# If not running:
+docker-compose up -d
+
+# For manual installation:
+# Make sure surreal start command is running in another terminal
+```
+
+#### Issue: "GEMINI_API_KEY not found"
+
+**Solution:**
+```bash
+# Check if .env file exists
+ls -la .env
+
+# If not, create it:
+cp .env.example .env
+
+# Edit .env and add your key:
+# GEMINI_API_KEY=your_actual_key_here
+```
+
+#### Issue: "Invalid API key"
+
+**Solution:**
+- Verify your Gemini API key at https://aistudio.google.com/apikey
+- Make sure there are no spaces or quotes around the key in `.env`
+- Format: `GEMINI_API_KEY=AIzaSyABC123...` (no spaces, no quotes)
+
+#### Issue: Deno command not found
+
+**Solution:**
+```bash
+# Add Deno to PATH (macOS/Linux)
+echo 'export PATH="$HOME/.deno/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Or for zsh:
+echo 'export PATH="$HOME/.deno/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify:
+deno --version
+```
+
+---
+
+### Next Steps
+
+- 📚 **Ingest More Docs:** Add your favorite documentation sites
+- 🔍 **Explore Features:** Try viewing stats (option 3) or clearing docs (option 4)
+- ⚙️ **Customize:** Adjust chunk size, similarity threshold (see Advanced Configuration below)
+- 🚀 **Automate:** Use command line mode in scripts
+
+---
+
 ## Project Structure
 
 ```
 doc-hunter/
 ├── src/
-│   ├── main.ts       # CLI entry point and command router
-│   ├── db.ts         # Database connection and schema initialization
-│   ├── ingest.ts     # Document ingestion pipeline
-│   ├── query.ts      # Question answering with vector search
-│   ├── utils.ts      # Core utilities (fetch, chunk, embed, generate)
-│   └── types.ts      # TypeScript type definitions
-├── .env              # Environment variables (GEMINI_API_KEY)
-├── deno.json         # Deno configuration and dependencies
-└── README.md         # This file
+│   ├── main.ts          # CLI entry point and command router
+│   ├── db.ts            # Database connection and schema initialization
+│   ├── ingest.ts        # Document ingestion pipeline
+│   ├── query.ts         # Question answering with vector search
+│   ├── interactive.ts   # Interactive mode orchestrator
+│   ├── utils.ts         # Core utilities (fetch, chunk, embed, generate)
+│   └── types.ts         # TypeScript type definitions
+├── .env                 # Environment variables (GEMINI_API_KEY)
+├── .env.example         # Environment template
+├── .gitignore           # Git ignore rules
+├── docker-compose.yml   # Docker configuration for SurrealDB
+├── deno.json            # Deno configuration and dependencies
+└── README.md            # This file
 ```
 
 ## Core Components
@@ -210,97 +553,43 @@ export interface SearchResult {
 }
 ```
 
-## Prerequisites
+## Advanced Usage
 
-1. **Deno Runtime**
-   ```bash
-   curl -fsSL https://deno.land/install.sh | sh
-   ```
-
-2. **SurrealDB**
-   ```bash
-   # macOS
-   brew install surrealdb/tap/surreal
-
-   # Or download from https://surrealdb.com/install
-   ```
-
-3. **Google Gemini API Key**
-   - Get your API key from [Google AI Studio](https://aistudio.google.com/apikey)
-
-## Setup
-
-### 1. Clone the Repository
-```bash
-git clone <your-repo-url>
-cd doc-hunter
-```
-
-### 2. Configure Environment Variables
-Create a `.env` file in the project root:
-
-```env
-GEMINI_API_KEY=your_api_key_here
-```
-
-### 3. Start SurrealDB
-```bash
-surreal start --log trace --user root --pass root memory
-```
-
-This starts SurrealDB on `http://localhost:8000` with in-memory storage.
-
-For persistent storage:
-```bash
-surreal start --log trace --user root --pass root file://mydatabase.db
-```
-
-### 4. Initialize Database Schema
-```bash
-deno task start init
-```
-
-**Output:**
-```
-⚡ Initializing Schema...
-🗑️  Dropping existing table...
-📋 Creating table...
-📝 Defining fields...
-🔢 Defining embedding field (3072 dimensions)...
-🔍 Creating vector index...
-✅ Schema Initialized!
-```
-
-## Usage
-
-### Command Overview
+### Command Reference
 
 ```bash
-# Display help
+# Interactive mode (default)
 deno task start
+deno task start interactive
+deno task start i
 
-# Initialize database schema
-deno task start init
-
-# Ingest documentation from URL
-deno task start ingest <url>
-
-# Ask a question about ingested docs
-deno task start ask "<question>"
+# Direct commands
+deno task start init                    # Initialize database schema
+deno task start ingest <url>            # Ingest documentation from URL
+deno task start ask "<question>"        # Ask a question (with streaming)
 ```
 
-### 1. Ingest Documentation
+### Interactive Mode Features
 
+1. **Ingest Documents** - Add documentation from any URL
+2. **Ask Questions** - Query with real-time streaming answers
+3. **View Statistics** - See all ingested documents and chunk counts
+4. **Clear Database** - Remove all documents (with confirmation)
+5. **Continuous Session** - Ask multiple questions without restarting
+
+### How Ingestion Works
+
+**Pipeline:**
+1. **Fetch** - Downloads HTML from URL
+2. **Extract** - Removes HTML tags and cleans text
+3. **Chunk** - Splits into ~500 word chunks
+4. **Embed** - Generates 3072-dimensional vectors using Gemini
+5. **Store** - Saves chunks with embeddings in SurrealDB
+
+**Example:**
 ```bash
 deno task start ingest https://docs.deno.com/runtime/
 ```
-
-**What Happens:**
-1. Fetches HTML from the URL
-2. Extracts and cleans text content
-3. Splits into ~500 word chunks
-4. Generates 3072-dim embeddings for each chunk
-5. Stores in SurrealDB with vector index
 
 **Output:**
 ```
@@ -311,18 +600,19 @@ deno task start ingest https://docs.deno.com/runtime/
 ✅ Ingestion Complete!
 ```
 
-### 2. Ask Questions
+### How Question Answering Works
 
+**Pipeline:**
+1. **Vectorize** - Converts your question to a 3072-dim vector
+2. **Search** - Finds top 3 similar chunks using cosine similarity
+3. **Context** - Combines relevant chunks
+4. **Generate** - Gemini AI generates answer from context
+5. **Stream** - Answer appears in real-time
+
+**Example:**
 ```bash
 deno task start ask "What is Deno?"
 ```
-
-**What Happens:**
-1. Converts question to 3072-dim vector
-2. Searches SurrealDB for similar chunks (cosine similarity)
-3. Retrieves top 3 most relevant chunks
-4. Sends context + question to Gemini
-5. Returns AI-generated answer
 
 **Output:**
 ```
@@ -335,18 +625,66 @@ runtime with secure defaults and a great developer experience.
 It is built on V8, Rust, and Tokio.
 ```
 
-### Example Workflow
+### Database Persistence
+
+**With Docker (Recommended):**
+- Data persists in Docker volume `surreal_data`
+- Survives container restarts
+- View data: Access Surrealist UI or query directly
+
+**View Stored Data:**
+```bash
+# Connect to SurrealDB
+surreal sql --conn http://localhost:8000 --user root --pass root --ns test --db docs
+
+# Query documents
+SELECT url, count() FROM doc_chunks GROUP BY url;
+
+# View specific chunks
+SELECT * FROM doc_chunks LIMIT 5;
+```
+
+**Clear All Data:**
+```bash
+# Option 1: Use interactive mode (option 4)
+deno task start
+
+# Option 2: Direct SQL
+surreal sql --conn http://localhost:8000 --user root --pass root --ns test --db docs
+DELETE FROM doc_chunks;
+
+# Option 3: Reinitialize (drops and recreates table)
+deno task start init
+```
+
+### Working with Multiple Documents
+
+Doc-Hunter stores **all documents globally** - there's no session isolation:
 
 ```bash
-# 1. Initialize database
-deno task start init
-
-# 2. Ingest multiple documentation sources
+# Day 1: Ingest Deno docs
 deno task start ingest https://docs.deno.com/runtime/
-deno task start ingest https://docs.surrealdb.com/docs/
 
-# 3. Ask questions
-deno task start ask "How do I run Deno programs?"
+# Day 2: Ingest SurrealDB docs
+deno task start ingest https://docs.surrealdb.com/
+
+# Ask questions - searches BOTH sources automatically
+deno task start ask "What is vector search?"
+# Returns results from SurrealDB docs (higher similarity)
+
+deno task start ask "How do I run TypeScript?"
+# Returns results from Deno docs (higher similarity)
+```
+
+**Benefits:**
+- Build a comprehensive knowledge base
+- Cross-reference multiple sources
+- Automatic relevance ranking
+
+**Limitations:**
+- No per-session isolation
+- Can't filter by specific source (yet)
+- Old docs persist unless manually deleted
 deno task start ask "What is vector similarity search?"
 deno task start ask "How does SurrealDB handle embeddings?"
 ```
